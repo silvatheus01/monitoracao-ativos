@@ -37,21 +37,15 @@ class Monitor(models.Model):
         super(Monitor, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        if not self.active:
-            if self.task is not None:
-                self.task.enabled = False
-                self.task.save()
-            super(Monitor, self).save(*args, **kwargs)
-            return
+        
+        if self.task is not None:
+            self.task.interval.delete()
+            self.task.delete()
 
         schedule, created = IntervalSchedule.objects.get_or_create(
             every=self.interval,
             period=IntervalSchedule.SECONDS, 
         )
-
-        if self.task is not None:
-            self.task.interval.delete()
-            self.task.delete()
             
         task = PeriodicTask.objects.create(
             interval=schedule,
@@ -64,8 +58,11 @@ class Monitor(models.Model):
                 }
             ),
         )
-        
+
+        task.enabled = self.active
+        task.save()
         self.task = task
+
         super(Monitor, self).save(*args, **kwargs)
 
     def __str__(self):
