@@ -11,6 +11,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
+
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -127,3 +130,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # celery broker and results in sqlite
 CELERY_BROKER_URL = "sqla+sqlite:///celery.sqlite"
 CELERY_RESULT_BACKEND = "db+sqlite:///celery.sqlite"
+
+load_dotenv() 
+
+EMAIL_BACKEND = os.environ.get('EMAIL_BACKEND')
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = os.environ.get('EMAIL_PORT')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL')
+DEFAULT_TO_EMAIL = os.environ.get('DEFAULT_TO_EMAIL')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS')
