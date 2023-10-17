@@ -1,8 +1,12 @@
 from django.contrib import admin, messages
 from .models import Monitor, Asset, Quotation
 
+from django_celery_beat.models import (PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule)
+
 class MonitorAdmin(admin.ModelAdmin):
+    list_filter = ['active']
     list_display =['asset', 'interval', 'active'] 
+    search_fields = ['asset__name', 'active'] 
     exclude = ('task',)
 
     def delete_queryset(self, request, queryset):
@@ -13,15 +17,17 @@ class MonitorAdmin(admin.ModelAdmin):
         
 class QuotationAdmin(admin.ModelAdmin):
     list_display =['asset', 'price', 'recording_date', 'trade_date'] 
-    search_fields = ['asset__name', 'price'] 
+    search_fields = ['asset__name', 'price', 'recording_date', 'trade_date'] 
+    readonly_fields=['asset', 'price', 'recording_date', 'trade_date']
+    list_filter = ['asset', 'recording_date', 'trade_date']
+    list_per_page=10
+
 class AssetAdmin(admin.ModelAdmin):
-    def save_model(self, request, obj, form, change):
-        try:
-            return super(AssetAdmin, self).save_model(request, obj, form, change)
-        except ValueError as e:
-            messages.set_level(request, messages.ERROR)
-            messages.error(request, e)           
+    list_display =['name'] 
+    search_fields = ['name'] 
 
 admin.site.register(Monitor, admin_class=MonitorAdmin)
 admin.site.register(Asset, admin_class=AssetAdmin)
 admin.site.register(Quotation, admin_class=QuotationAdmin)
+
+admin.site.unregister([PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule])

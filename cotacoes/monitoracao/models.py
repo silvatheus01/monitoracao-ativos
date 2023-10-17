@@ -2,34 +2,46 @@ from decimal import Decimal
 import json
 
 from django.db import models
+from django.forms import ValidationError
 from django_celery_beat.models import PeriodicTask, IntervalSchedule
 from .api.sheets import Spreadsheet
 from django.core.validators import MinValueValidator
 
-
 class Asset(models.Model):
-    name = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=10, unique=True,  verbose_name = "Ativo")
     row = models.IntegerField(blank=False, editable=False)
 
-    def save(self, *args, **kwargs):
+    def clean(self):
         sheet = Spreadsheet()
         try:
             self.row = sheet.find_row(self.name)
         except ValueError:
-            raise ValueError("Não é possível monitorar esse ativo. Tente outro!")
-        
-        super(Asset, self).save(*args, **kwargs)
+            raise ValidationError("Não é possível monitorar esse ativo. Tente outro!") 
+    
+    class Meta:
+        verbose_name = "Ativo"
 
     def __str__(self):
         return f'{self.name}'
 
 class Monitor(models.Model):
-    asset = models.OneToOneField(Asset, on_delete=models.CASCADE)
-    interval = models.IntegerField(blank=False, validators=[MinValueValidator(1)])
+    asset = models.OneToOneField(Asset, on_delete=models.CASCADE, verbose_name = "Ativo")
+    interval = models.IntegerField(blank=False, validators=[MinValueValidator(1)], verbose_name="Intervalo")
     task = models.OneToOneField(PeriodicTask, null=True, blank=True, on_delete=models.SET_NULL)
-    upper_limit = models.DecimalField(decimal_places = 2, max_digits=4, validators=[MinValueValidator(Decimal('0'))])
-    lower_limit = models.DecimalField(decimal_places = 2, max_digits=4, validators=[MinValueValidator(Decimal('0'))]) 
-    active = models.BooleanField(default=True)
+    upper_limit = models.DecimalField(decimal_places = 2, max_digits=4, validators=[MinValueValidator(Decimal('0'))], verbose_name = "Limite superior")
+    lower_limit = models.DecimalField(decimal_places = 2, max_digits=4, validators=[MinValueValidator(Decimal('0'))], verbose_name = "Limite inferior") 
+    active = models.BooleanField(default=True, verbose_name = "Ativo")
+
+    class Meta:
+        verbose_name = "Monitor"
+        verbose_name_plural = "Monitores"
+
+    def clean(self):
+        upper_limit = self.upper_limit
+        lower_limit = self.lower_limit
+        if(upper_limit and lower_limit):
+            if upper_limit < lower_limit:
+                raise ValidationError("O limite superior deve ser maior do que o limite inferior.") 
 
     def delete(self, *args, **kwargs):
         self.task.interval.delete()
@@ -37,7 +49,7 @@ class Monitor(models.Model):
         super(Monitor, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        
+
         if self.task is not None:
             self.task.interval.delete()
             self.task.delete()
@@ -68,14 +80,15 @@ class Monitor(models.Model):
     def __str__(self):
         return f'{self.asset}'
 
-
 class Quotation(models.Model):
-    asset = models.ForeignKey(Asset,  on_delete=models.CASCADE)
-    price = models.DecimalField(decimal_places = 2, max_digits=4)
-    recording_date = models.DateTimeField()
-    trade_date = models.DateTimeField()
+    asset = models.ForeignKey(Asset,  on_delete=models.CASCADE, verbose_name = "Ativo")
+    price = models.DecimalField(decimal_places = 2, max_digits=4, verbose_name = "Preço")
+    recording_date = models.DateTimeField(verbose_name = "Momento do registro")
+    trade_date = models.DateTimeField(verbose_name = "Horário da negociação")
+
+    class Meta:
+        verbose_name = "Cotação"
 
     def __str__(self):
         return f'Ativo: {self.asset.name} | Preço: R${self.price}'
-
     
