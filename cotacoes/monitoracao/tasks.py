@@ -12,7 +12,7 @@ from django.conf import settings
 from math import isclose
 
 def send_email(msg):
-    send_email_django(
+    return send_email_django(
         subject="Alerta de preço",
         message='',
         from_email=settings.DEFAULT_FROM_EMAIL,
@@ -50,7 +50,10 @@ def handler_log(monitor, security, asset_name):
 
         msg_log = msg_log + alert
         email_msg = email_msg + alert
-        send_email(email_msg)
+        if(send_email(email_msg) > 0):
+            print("O alerta foi enviado por email.")
+        else:
+            print("Não foi possível enviar o alerta por email.")
         
     return msg_log
 
