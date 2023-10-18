@@ -22,6 +22,9 @@ class QuotationAdmin(admin.ModelAdmin):
     list_filter = ['asset', 'recording_date', 'trade_date']
     list_per_page=10
 
+    def has_add_permission(self, request):
+        return False
+
 class AssetAdmin(admin.ModelAdmin):
     list_display =['name'] 
     search_fields = ['name'] 
@@ -30,4 +33,5 @@ admin.site.register(Monitor, admin_class=MonitorAdmin)
 admin.site.register(Asset, admin_class=AssetAdmin)
 admin.site.register(Quotation, admin_class=QuotationAdmin)
 
-admin.site.unregister([PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule])
+admin.site.unregister([PeriodicTask, IntervalSchedule])
+admin.site.unregister([CrontabSchedule, SolarSchedule, ClockedSchedule])

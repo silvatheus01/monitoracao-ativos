@@ -39,42 +39,21 @@ class Monitor(models.Model):
     def clean(self):
         upper_limit = self.upper_limit
         lower_limit = self.lower_limit
+
         if(upper_limit and lower_limit):
             if upper_limit < lower_limit:
                 raise ValidationError("O limite superior deve ser maior do que o limite inferior.") 
 
     def delete(self, *args, **kwargs):
-        self.task.interval.delete()
-        self.task.delete()
+        delete_task(self)
         super(Monitor, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-
         if self.task is not None:
-            self.task.interval.delete()
-            self.task.delete()
+            delete_task(self)
 
-        schedule, created = IntervalSchedule.objects.get_or_create(
-            every=self.interval,
-            period=IntervalSchedule.SECONDS, 
-        )
-            
-        task = PeriodicTask.objects.create(
-            interval=schedule,
-            name=f"Monitor: {self.asset.name}",
-            task="monitoracao.tasks.save_quote_monitoring",
-            kwargs=json.dumps(
-                {
-                    "row": self.asset.row,
-                    "name": self.asset.name
-                }
-            ),
-        )
-
-        task.enabled = self.active
-        task.save()
+        task = create_task(self)
         self.task = task
-
         super(Monitor, self).save(*args, **kwargs)
 
     def __str__(self):
@@ -88,7 +67,34 @@ class Quotation(models.Model):
 
     class Meta:
         verbose_name = "Cotação"
+        verbose_name_plural = "Cotações"
 
     def __str__(self):
         return f'Ativo: {self.asset.name} | Preço: R${self.price}'
+    
+def delete_task(self):
+    self.task.interval.delete()
+    self.task.delete()
+
+def create_task(self):
+    schedule, created = IntervalSchedule.objects.get_or_create(
+            every=self.interval,
+            period=IntervalSchedule.MINUTES, 
+        )
+            
+    task = PeriodicTask.objects.create(
+        interval=schedule,
+        name=f"Monitor: {self.asset.name}",
+        task="monitoracao.tasks.save_quote_monitoring",
+        kwargs=json.dumps(
+            {
+                "row": self.asset.row,
+                "asset_name": self.asset.name
+            }
+        ),
+    )
+
+    task.enabled = self.active
+    task.save()
+    return task
     
