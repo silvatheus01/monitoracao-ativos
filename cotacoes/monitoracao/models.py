@@ -77,10 +77,10 @@ def delete_task(self):
     self.task.delete()
 
 def create_task(self):
-    schedule, created = IntervalSchedule.objects.get_or_create(
-            every=self.interval,
-            period=IntervalSchedule.MINUTES, 
-        )
+    schedule = IntervalSchedule.objects.create(
+        every=self.interval,
+        period=IntervalSchedule.MINUTES, 
+    )
             
     task = PeriodicTask.objects.create(
         interval=schedule,
