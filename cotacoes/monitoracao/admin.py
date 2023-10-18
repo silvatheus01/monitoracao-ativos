@@ -1,14 +1,29 @@
-from django.contrib import admin, messages
+from django.contrib import admin
 from .models import Monitor, Asset, Quotation
 
 from django_celery_beat.models import (PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule)
 
+def change_monitor_state(monitors, activate):
+    monitors.update(active=activate)
+    for monitor in monitors:
+        monitor.task.enabled = activate
+        monitor.task.save() 
+
+@admin.action(description="Ativar monitores selecionados.")
+def make_active(self, request, queryset):
+    change_monitor_state(queryset, True)
+    
+@admin.action(description="Desativar monitores selecionados.")
+def make_not_active(self, request, queryset):
+    change_monitor_state(queryset, False)
+    
 class MonitorAdmin(admin.ModelAdmin):
     list_filter = ['active']
     list_display =['asset', 'interval', 'active'] 
     search_fields = ['asset__name', 'active'] 
     exclude = ('task',)
-
+    actions = [make_active, make_not_active]
+    
     def delete_queryset(self, request, queryset):
         for monitor in queryset:
             monitor.task.interval.delete()
