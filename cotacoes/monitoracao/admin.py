@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import Monitor, Asset, Quotation
 
+from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
+
 from django_celery_beat.models import (PeriodicTask, IntervalSchedule, CrontabSchedule, SolarSchedule, ClockedSchedule)
 
 def change_monitor_state(monitors, activate):
@@ -50,3 +53,6 @@ admin.site.register(Quotation, admin_class=QuotationAdmin)
 
 admin.site.unregister([PeriodicTask, IntervalSchedule])
 admin.site.unregister([CrontabSchedule, SolarSchedule, ClockedSchedule])
+
+admin.site.unregister(User)
+admin.site.unregister(Group)
