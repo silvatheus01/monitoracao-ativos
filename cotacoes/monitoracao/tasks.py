@@ -31,9 +31,6 @@ def get_security(row):
     spreadsheet = Spreadsheet()
     return spreadsheet.get_security(row)
 
-def get_last_monitoring(asset_name):
-    return Quotation.objects.filter(asset__name=asset_name).order_by('-recording_date').first()
-
 def show_alert(upper_limit, lower_limit, price):
     return (upper_limit < price or lower_limit > price) and not (equals(upper_limit, price) or equals(lower_limit, price))
     
@@ -53,16 +50,8 @@ def handler_log(monitor, security, asset_name):
 
         msg_log = msg_log + alert
         email_msg = email_msg + alert
-
-        last_monitoring = get_last_monitoring(asset_name)
-
-        if last_monitoring is not None:
-            last_price = last_monitoring.price
-            if(not equals(last_price, price)):
-                send_email(email_msg)
-        else:
-            send_email(email_msg)
-    
+        send_email(email_msg)
+        
     return msg_log
 
 @shared_task(bind=True)
